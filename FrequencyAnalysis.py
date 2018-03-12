@@ -28,3 +28,4 @@ with open('/Users/martinapivarnikova/Documents/anonymized_queries') as f:
                 print(dn)
                 print(w)
 
+cursor.close();

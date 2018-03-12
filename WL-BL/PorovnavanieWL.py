@@ -4,6 +4,7 @@ import publicsuffixlist
 db = pymysql.connect(host='localhost',
                      user='root', passwd='root', db="Bakalarka")
 cursor = db.cursor()
+
 #poc = 0;
 with open('/Users/martinapivarnikova/Documents/anonymized_queries') as f:
     for line in f:
