@@ -1,5 +1,6 @@
 import math
 from collections import Counter
+import numpy
 
 def entropy(s):
 
@@ -36,10 +37,10 @@ def dashes(dn):
 
     return sum;
 
-
+entropyr = []
 with open('/Users/martinapivarnikova/Downloads/zeus_dga_domains.txt') as f:
     for line in f:
-        print('Domain: ',line)
-        print('Entropy: ',entropy(line),'\n','Frequency: ',frequency(line),'\n','Numbers: ',numbers(line),'\n','Dashes: ',dashes(line))
-        print('\n')
+        entropyr.append(entropy(line))
         #print(line)
+
+print(numpy.mean(entropyr))

@@ -31,18 +31,18 @@ def importtoBL(r):
 for j in range(1,12):
     for k in range(1,31):
         if(j < 10 & k < 10) :
-            r = requests.get('http://mirror1.malwaredomains.com/files/' + str(2017) + '0' + str(j) + '0' + str(k) + '.txt')
+            r = requests.get('http://mirror1.malwaredomains.com/files/' + str(2018) + '0' + str(j) + '0' + str(k) + '.txt')
             if (r.status_code == 200) : importtoBL(r)
             # print(r.status_code)
         if(j<10 & k >=10) :
-            r = requests.get('http://mirror1.malwaredomains.com/files/' + str(2017) + '0' + str(j) + str(k) + '.txt')
+            r = requests.get('http://mirror1.malwaredomains.com/files/' + str(2018) + '0' + str(j) + str(k) + '.txt')
             if (r.status_code == 200): importtoBL(r)
             # print(r.status_code)
         if(j>=10 & k<10) :
-            r = requests.get('http://mirror1.malwaredomains.com/files/' + str(2017) + str(j) + '0' +str(k) + '.txt')
+            r = requests.get('http://mirror1.malwaredomains.com/files/' + str(2018) + str(j) + '0' +str(k) + '.txt')
             if (r.status_code == 200): importtoBL(r)
         if(j>=10 & k >=10) :
-            r = requests.get('http://mirror1.malwaredomains.com/files/' + str(2017) + str(j) + str(k) + '.txt')
+            r = requests.get('http://mirror1.malwaredomains.com/files/' + str(2018) + str(j) + str(k) + '.txt')
             if (r.status_code == 200): importtoBL(r)
 
 
