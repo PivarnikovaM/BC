@@ -2,6 +2,9 @@ import pymysql
 import publicsuffixlist
 from pybloom import BloomFilter
 
+# def parse_subdomain(domain_name):
+
+
 db = pymysql.connect(host='localhost',
                      user='root', passwd='root', db="Bakalarka")
 cursor = db.cursor()

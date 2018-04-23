@@ -1,6 +1,8 @@
 import pymysql
+from pybloom import BloomFilter
+import publicsuffixlist
 
-def filer_ext():
+def filter_ext():
     str = ''
     cnt = 0
     test = False
@@ -19,15 +21,38 @@ def filer_ext():
                 cnt = 0
                 test = False
 
-def filter():
-    with open('/Users/martinapivarnikova/Downloads/dns2.txt', 'r') as file:
-        s = open('/Users/martinapivarnikova/Downloads/filteredBaseDNS.txt', 'w')
-        for line in file:
-            split_dq = line.split(" ")
-            type = split_dq[2]
-            if 'CQ'==type or 'CR'==type:
-                s.write(line)
+def check_whitelist(dn):
+    f = BloomFilter(capacity=1000000, error_rate=0.001)
+    db = pymysql.connect(host='localhost',
+                         user='root', passwd='root', db="Bakalarka")
+    cursor = db.cursor()
+    cursor.execute("SELECT domain_name FROM Whitelist")
+    results = cursor.fetchall()
 
+    for r in results:
+        f.add(r[0])
+
+    cursor.close()
+
+    domain_name = publicsuffixlist.PublicSuffixList().subdomain(dn, 0)
+    if (domain_name not in f):
+        return True
+    else: return False
+
+def check_blacklist(dn):
+    f = BloomFilter(capacity=12000, error_rate=0.00001)
+    db = pymysql.connect(host='localhost',
+                         user='root', passwd='root', db="Bakalarka")
+    cursor = db.cursor()
+    cursor.execute("SELECT domain_name,type FROM Blacklist")
+    results = cursor.fetchall()
+
+    cursor.close()
+    for r in results:
+        f.add(r[0])
+
+    if (dn in f): return True
+    else: return False
 
 
 def save_db():
@@ -74,11 +99,16 @@ def save_db():
                     ip = ipa[len(ipa)-1]
             if '---' in line:
                 cnt = 0
-                if dn.count('.') > 1:
+                # if check_blacklist(dn): insert into db
+                # domain name must contain at least two dots to be normal (cause DNS generates weird domains)
+                if dn.count('.') > 1 and check_whitelist(dn):
                     cursor.execute('INSERT INTO Data(type_rq,time_of,query_address,response_address,rcode,id_q,domain_name,ip) '
                                    'VALUES(%s,%s,%s,%s,%s,%s,%s,%s)',
                                    (type,time_of,query_address,response_address,rcode,id_q,dn,ip))
                     db.commit()
                 response_address = None
 
-save_db()
+
+
+
+# save_db()

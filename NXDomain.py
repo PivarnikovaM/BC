@@ -8,7 +8,7 @@ cursor = db.cursor()
 
 cursor.execute("select * from Data where rcode = 'NXDOMAIN' order by query_address desc,time_of asc")
 results = cursor.fetchall()
-
+s = open('/Users/martinapivarnikova/Downloads/nxdomainRes.txt', 'w')
 count = 0
 data = []
 i = 0
@@ -22,17 +22,15 @@ for r in results:
 
         t2 = pom[2].replace("\n","")
         time2 = datetime.strptime(t2,'%Y-%m-%d %H:%M:%S.%f')
-        # print(time,time2)
-        # print(ip,ip2)
-        # print('\n')
 
-        if ip == ip2 and time < time2 + timedelta(minutes = 10):
+        if ip == ip2 and time2 < time + timedelta(minutes = 10):
             data.append(results[i])
             count += 1
         else:
 
             if(count > 10):
-                print(data)
+                s.write(str(data))
+                s.write('------\n')
 
                 # print('\n')
             count = 0
