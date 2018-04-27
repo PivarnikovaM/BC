@@ -20,7 +20,7 @@ class ProducerThread(threading.Thread):
                              user='root', passwd='root', db="Bakalarka")
         cursor = db.cursor()
 
-        cursor.execute('select distinct query_address from Data where rcode = "NXDOMAIN"')
+        cursor.execute('select distinct query_address from Data3 where rcode = "NXDOMAIN"')
         while True:
             if not q.full():
                 res = cursor.fetchone()
@@ -34,44 +34,61 @@ class ProducerThread(threading.Thread):
 
 
 class ConsumerThread(threading.Thread):
-    def __init__(self, group=None, target=None, name=None,
+    def __init__(self, db=None,cursor=None, target=None, name=None,
                  args=(), kwargs=None, verbose=None):
         super(ConsumerThread, self).__init__()
         self.target = target
         self.name = name
+        self.db = pymysql.connect(host='localhost',
+                             user='root', passwd='root', db="Bakalarka")
+        self.cursor = self.db.cursor()
         return
 
     def nxdomain(self, results):
         s = open('/Users/martinapivarnikova/Downloads/nxdomainRes.txt', 'a')
-        count = 0
+        count = 1
         data = []
         i = 0
         for r in results:
-            if (i < len(results) - 1):
-                ip = r[2]
+            if (i < len(results)-1):
+
                 pom = results[i + 1]
-                ip2 = pom[2]
                 t = r[1].replace("\n", "")
                 time = datetime.strptime(t, '%Y-%m-%d %H:%M:%S.%f')
 
                 t2 = pom[1].replace("\n", "")
                 time2 = datetime.strptime(t2, '%Y-%m-%d %H:%M:%S.%f')
 
-                if ip == ip2 and time2 < time + timedelta(minutes=10):
+                if time2 < time + timedelta(minutes=10):
                     data.append(results[i])
                     count += 1
                 else:
 
-                    if (count > 10):
+                    if (count >= 10):
+                        for d in data:
+                            self.cursor.execute("INSERT INTO NXDomainResults(type_rq,time_of,query_address,rcode,id_q,domain_name) "
+                                                 "VALUES (%s,%s,%s,%s,%s,%s)",(d[0],d[1],d[2],d[3],d[4],d[5]))
+                            self.db.commit()
                         s.write(str(data))
                         print(data)
                         s.write('------\n')
 
-                        # print('\n')
                     count = 0
                     data = []
 
                 i += 1
+            else:
+                if (count >= 10):
+                    for d in data:
+                        self.cursor.execute(
+                            "INSERT INTO NXDomainResults(type_rq,time_of,query_address,rcode,id_q,domain_name) "
+                            "VALUES (%s,%s,%s,%s,%s,%s)", (d[0], d[1], d[2], d[3], d[4], d[5]))
+                        self.db.commit()
+                    s.write(str(data))
+                    print(data)
+                    s.write('------\n')
+                    return
+
 
     def run(self):
         db = pymysql.connect(host='localhost',
@@ -81,7 +98,7 @@ class ConsumerThread(threading.Thread):
         while True:
             if not q.empty():
                 item = q.get()
-                cursor.execute("SELECT * FROM Data WHERE rcode = 'NXDOMAIN' and query_address like %s",(item,))
+                cursor.execute("SELECT * FROM Data3 WHERE rcode = 'NXDOMAIN' and query_address like %s order by time_of asc",(item,))
                 results = cursor.fetchall()
 
                 self.nxdomain(results)

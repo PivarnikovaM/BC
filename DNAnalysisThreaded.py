@@ -23,7 +23,7 @@ class ProducerThread(threading.Thread):
                              user='root', passwd='root', db="Bakalarka")
         cursor = db.cursor()
 
-        cursor.execute('select distinct domain_name from Data2')
+        cursor.execute('select distinct domain_name from Data3')
         while True:
             if not q.full():
                 res = cursor.fetchone()
@@ -81,7 +81,10 @@ class ConsumerThread(threading.Thread):
         return sum;
 
     def analyse(self,dn):
-        s = open('/Users/martinapivarnikova/Downloads/dnAnalysisRes.txt', 'a')
+        # s = open('/Users/martinapivarnikova/Downloads/dnAnalysisRes.txt', 'a')
+        db = pymysql.connect(host='localhost',
+                             user='root', passwd='root', db="Bakalarka")
+        cursor = db.cursor()
 
         ent = self.entropy(dn)
         freq = self.frequency(dn)
@@ -90,20 +93,19 @@ class ConsumerThread(threading.Thread):
         string = ' '
         if ent > 3.761 and freq < 46.994:
             # string = string + dn + ' ' + str(ent) + ' ' + str(freq) + ' ' + str(num) + ' ' + str(d) + '\n'
-            s.write(dn)
-            s.write('\n')
+            cursor.execute("INSERT INTO DNResults(domain_name,entropy,frequency_an,numbers,dash) VALUES (%s,%s,%s,%s,%s)",(dn,ent,freq,num,d))
+            db.commit()
+        cursor.close()
 
     def run(self):
-        db = pymysql.connect(host='localhost',
-                             user='root', passwd='root', db="Bakalarka")
-        cursor = db.cursor()
+
 
         while True:
             if not q.empty():
                 item = q.get()
                 self.analyse(item[0])
-            else:  break
-        cursor.close()
+            else: break
+
         return
 
 
