@@ -1,7 +1,7 @@
 import pymysql
 from pybloom import BloomFilter
-import publicsuffixlist
 
+# filter an extended DNSTAP file
 def filter_ext():
     str = ''
     cnt = 0
@@ -11,7 +11,7 @@ def filter_ext():
         for line in file:
             cnt += 1
             str = str + line
-            if cnt==5:
+            if cnt == 5:
                 if 'CLIENT' in line:
                     test = True
             if '---' in line:
@@ -21,40 +21,51 @@ def filter_ext():
                 cnt = 0
                 test = False
 
+
+f = BloomFilter(capacity=5000000, error_rate=0.00001)
+db = pymysql.connect(host='localhost',
+                     user='root', passwd='root', db="Bakalarka")
+cursor = db.cursor()
+cursor.execute("SELECT domain_name FROM Whitelist")
+
+res = cursor.fetchall()
+for r in res:
+    f.add(r[0])
+
+cursor.close()
+print("Done")
+
+
+# Whitelist comparision using Bloom filter
 def check_whitelist(dn):
-    f = BloomFilter(capacity=1000000, error_rate=0.001)
-    db = pymysql.connect(host='localhost',
-                         user='root', passwd='root', db="Bakalarka")
-    cursor = db.cursor()
-    cursor.execute("SELECT domain_name FROM Whitelist")
-    results = cursor.fetchall()
+    domain_name = dn.split('.')
+    pp = None
+    for i in range(len(domain_name)):
+        pp = ".".join((domain_name[-(i + 1)], pp) if pp is not None else (domain_name[-(i + 1)],))
+        if pp in f:
+            return True
 
-    for r in results:
-        f.add(r[0])
+    return False
 
-    cursor.close()
+fblack = BloomFilter(capacity=12000, error_rate=0.00001)
+cursor_bl = db.cursor()
+cursor_bl.execute("SELECT domain_name,type FROM Blacklist")
+results_bl = cursor_bl.fetchall()
+cursor_bl.close()
 
-    domain_name = publicsuffixlist.PublicSuffixList().subdomain(dn, 0)
-    if (domain_name not in f):
-        return True
-    else: return False
-
+# Blacklist comparision using Bloom filter
 def check_blacklist(dn):
-    f = BloomFilter(capacity=12000, error_rate=0.00001)
-    db = pymysql.connect(host='localhost',
-                         user='root', passwd='root', db="Bakalarka")
-    cursor = db.cursor()
-    cursor.execute("SELECT domain_name,type FROM Blacklist")
-    results = cursor.fetchall()
 
-    cursor.close()
-    for r in results:
-        f.add(r[0])
+    for r in results_bl:
+        fblack.add(r[0])
 
-    if (dn in f): return True
-    else: return False
+    if dn in fblack:
+        return True
+    else:
+        return False
 
 
+# parsing DNSTAP data and saving into db (WL/BL filtered)
 def save_db():
     db = pymysql.connect(host='localhost',
                          user='root', passwd='root', db="Bakalarka")
@@ -63,28 +74,28 @@ def save_db():
     cnt = 0
     ans = False
     str = ''
-    ip=''
+    ip = ''
+    batch = 0
     with open('/Users/martinapivarnikova/Downloads/filteredDNS.txt', 'r') as file:
         for line in file:
             cnt += 1
             split_dq = line.split(" ")
-            if cnt==5:
+            if cnt == 5:
                 type = split_dq[3]
-            if cnt==6:
+            if cnt == 6:
                 time_of = '' + split_dq[4] + ' ' + split_dq[5]
             if cnt == 9:
                 query_address = split_dq[3]
-            if cnt == 10:
-                response_address = split_dq[3]
             if cnt == 14:
                 rcode = split_dq[9]
-                rcode = rcode.replace(",","")
+                rcode = rcode.replace(",", "")
                 id_q = split_dq[11]
             if cnt == 18:
                 domain = split_dq[4]
                 domain_name = domain.split('\t')
                 dn = domain_name[0]
                 dn = dn.replace(";", "")
+                dn = dn[:-1]
             if cnt == 21:
                 if type == 'CLIENT_RESPONSE\n' and rcode == 'NOERROR':
                     ans = True
@@ -94,21 +105,25 @@ def save_db():
                 else:
                     ans = False
                     answers = str.split(' ')
-                    a = answers[len(answers)-1]
+                    a = answers[len(answers) - 1]
                     ipa = a.split('\t')
-                    ip = ipa[len(ipa)-1]
+                    ip = ipa[len(ipa) - 1]
             if '---' in line:
                 cnt = 0
                 # if check_blacklist(dn): insert into db
                 # domain name must contain at least two dots to be normal (cause DNS generates weird domains)
-                if dn.count('.') > 1 and check_whitelist(dn):
-                    cursor.execute('INSERT INTO Data(type_rq,time_of,query_address,response_address,rcode,id_q,domain_name,ip) '
-                                   'VALUES(%s,%s,%s,%s,%s,%s,%s,%s)',
-                                   (type,time_of,query_address,response_address,rcode,id_q,dn,ip))
-                    db.commit()
-                response_address = None
+                if dn.count('.') > 1 and not check_whitelist(dn):
+                    batch += 1
+                    cursor.execute(
+                        'INSERT INTO Data3(type_rq,time_of,query_address,rcode,id_q,domain_name,ip) '
+                        'VALUES(%s,%s,%s,%s,%s,%s,%s)',
+                        (type, time_of, query_address, rcode, id_q, dn, ip))
+                    if batch % 1000 == 0:
+                        db.commit()
+                ip = None
 
+    db.commit()
+    cursor.close()
+    db.close()
 
-
-
-# save_db()
+save_db()

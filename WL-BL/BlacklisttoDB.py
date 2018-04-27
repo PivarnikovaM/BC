@@ -8,9 +8,7 @@ def importtoBL(r):
     cursor = db.cursor()
     for line in r.iter_lines():
         line = line.decode('utf-8')
-        #print(line)
         split_dq = line.split("\t")
-        #print(split_dq[2])
         try:
             cursor.execute('INSERT INTO Blacklist(domain_name,type) VALUES(%s,%s)', (split_dq[2],split_dq[3]))
         except pymysql.err.IntegrityError: print('ERROR: ' + split_dq[2])
