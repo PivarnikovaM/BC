@@ -1,5 +1,6 @@
 import pymysql
 from pybloom import BloomFilter
+import os
 
 # filter an extended DNSTAP file
 def filter_ext():
@@ -76,7 +77,7 @@ def save_db():
     str = ''
     ip = ''
     batch = 0
-    with open('/Users/martinapivarnikova/Downloads/filteredDNS.txt', 'r') as file:
+    with os.popen('sed -n "6956670,11323532p" /Users/martinapivarnikova/Downloads/filteredDNS.txt', 'r') as file:
         for line in file:
             cnt += 1
             split_dq = line.split(" ")

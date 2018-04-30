@@ -23,7 +23,7 @@ class ProducerThread(threading.Thread):
                              user='root', passwd='root', db="Bakalarka")
         cursor = db.cursor()
 
-        cursor.execute('select distinct domain_name from Data3')
+        #cursor.execute('select distinct domain_name from Data3')
         while True:
             if not q.full():
                 res = cursor.fetchone()
