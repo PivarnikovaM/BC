@@ -38,18 +38,18 @@ def dashes(dn):
     return sum;
 
 #entropyr = []
-with open('/Users/martinapivarnikova/Documents/banjori.txt','r') as f:
-    s = open('/Users/martinapivarnikova/Documents/banjoriRes.txt','w')
+with open('/Users/martinapivarnikova/Downloads/zeus_dga_domains.txt','r') as f:
+    # s = open('/Users/martinapivarnikova/Documents/banjoriRes.txt','w')
     for line in f:
         ent = entropy(line)
         freq = frequency(line)
         num = numbers(line)
         d = dashes(line)
-        if ent < 3.561 and freq > 50.994:
-            s.write(line)
-            s.write(str(ent) + " ")
-            s.write(str(freq))
-            s.write("\n")
-        #print(line)
+        if ent > 3.761 and freq < 46.994:
+            # s.write(line)
+            # s.write(str(ent) + " ")
+            # s.write(str(freq))
+            # s.write("\n")
+            print(line,ent,freq,num,d)
 
 #print(numpy.mean(entropyr))

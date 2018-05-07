@@ -12,8 +12,7 @@ q = Queue(BUF_SIZE)
 
 
 class ProducerThread(threading.Thread):
-    def __init__(self, group=None, target=None, name=None,
-                 args=(), kwargs=None, verbose=None):
+    def __init__(self, target=None, name=None):
         super(ProducerThread, self).__init__()
         self.target = target
         self.name = name
@@ -23,7 +22,7 @@ class ProducerThread(threading.Thread):
                              user='root', passwd='root', db="Bakalarka")
         cursor = db.cursor()
 
-        #cursor.execute('select distinct domain_name from Data3')
+        cursor.execute('select distinct domain_name,query_address from Data3')
         while True:
             if not q.full():
                 res = cursor.fetchone()
@@ -65,35 +64,35 @@ class ConsumerThread(threading.Thread):
         return w;
 
     def numbers(self,dn):
-        sum = 0;
+        sum = 0
         for letter in dn:
             if letter.isdigit():
-                sum += 1;
+                sum += 1
 
-        return sum;
+        return sum
 
     def dashes(self,dn):
-        sum = 0;
+        sum = 0
         for letter in dn:
             if letter == '-':
-                sum += 1;
+                sum += 1
 
         return sum;
 
-    def analyse(self,dn):
+    def analyse(self,item):
         # s = open('/Users/martinapivarnikova/Downloads/dnAnalysisRes.txt', 'a')
         db = pymysql.connect(host='localhost',
                              user='root', passwd='root', db="Bakalarka")
         cursor = db.cursor()
 
-        ent = self.entropy(dn)
-        freq = self.frequency(dn)
-        num = self.numbers(dn)
-        d = self.dashes(dn)
+        ent = self.entropy(item[0])
+        freq = self.frequency(item[0])
+        num = self.numbers(item[0])
+        d = self.dashes(item[0])
         string = ' '
         if ent > 3.761 and freq < 46.994:
             # string = string + dn + ' ' + str(ent) + ' ' + str(freq) + ' ' + str(num) + ' ' + str(d) + '\n'
-            cursor.execute("INSERT INTO DNResults(domain_name,entropy,frequency_an,numbers,dash) VALUES (%s,%s,%s,%s,%s)",(dn,ent,freq,num,d))
+            cursor.execute("INSERT INTO DNResults(domain_name,entropy,frequency_an,numbers,dash,ip) VALUES (%s,%s,%s,%s,%s,%s)",(item[0],ent,freq,num,d,item[1]))
             db.commit()
         cursor.close()
 
@@ -103,7 +102,7 @@ class ConsumerThread(threading.Thread):
         while True:
             if not q.empty():
                 item = q.get()
-                self.analyse(item[0])
+                self.analyse(item)
             else: break
 
         return

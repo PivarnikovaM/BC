@@ -9,8 +9,7 @@ BUF_SIZE = 10000
 q = Queue(BUF_SIZE)
 
 class ProducerThread(threading.Thread):
-    def __init__(self, group=None, target=None, name=None,
-                 args=(), kwargs=None, verbose=None):
+    def __init__(self, target=None, name=None):
         super(ProducerThread, self).__init__()
         self.target = target
         self.name = name
@@ -20,7 +19,7 @@ class ProducerThread(threading.Thread):
                              user='root', passwd='root', db="Bakalarka")
         cursor = db.cursor()
 
-        cursor.execute('select distinct query_address from Data3 where rcode = "NXDOMAIN"')
+        cursor.execute('SELECT DISTINCT query_address FROM Data3 WHERE rcode = "NXDOMAIN"')
         while True:
             if not q.full():
                 res = cursor.fetchone()
@@ -34,8 +33,7 @@ class ProducerThread(threading.Thread):
 
 
 class ConsumerThread(threading.Thread):
-    def __init__(self, db=None,cursor=None, target=None, name=None,
-                 args=(), kwargs=None, verbose=None):
+    def __init__(self, target=None, name=None):
         super(ConsumerThread, self).__init__()
         self.target = target
         self.name = name
@@ -45,7 +43,7 @@ class ConsumerThread(threading.Thread):
         return
 
     def nxdomain(self, results):
-        s = open('/Users/martinapivarnikova/Downloads/nxdomainRes.txt', 'a')
+        # s = open('/Users/martinapivarnikova/Downloads/nxdomainRes.txt', 'a')
         count = 1
         data = []
         i = 0
@@ -63,15 +61,15 @@ class ConsumerThread(threading.Thread):
                     data.append(results[i])
                     count += 1
                 else:
-
+                    data.append(results[i])
                     if (count >= 10):
                         for d in data:
                             self.cursor.execute("INSERT INTO NXDomainResults(type_rq,time_of,query_address,rcode,id_q,domain_name) "
                                                  "VALUES (%s,%s,%s,%s,%s,%s)",(d[0],d[1],d[2],d[3],d[4],d[5]))
                             self.db.commit()
-                        s.write(str(data))
-                        print(data)
-                        s.write('------\n')
+                        #s.write(str(data))
+                        #print(data)
+                        #s.write('------\n')
 
                     count = 0
                     data = []
@@ -84,9 +82,9 @@ class ConsumerThread(threading.Thread):
                             "INSERT INTO NXDomainResults(type_rq,time_of,query_address,rcode,id_q,domain_name) "
                             "VALUES (%s,%s,%s,%s,%s,%s)", (d[0], d[1], d[2], d[3], d[4], d[5]))
                         self.db.commit()
-                    s.write(str(data))
-                    print(data)
-                    s.write('------\n')
+                    #s.write(str(data))
+                    # print(data)
+                    # s.write('------\n')
                     return
 
 

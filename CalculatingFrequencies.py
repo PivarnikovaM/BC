@@ -5,7 +5,7 @@ db = pymysql.connect(host='localhost',
                      user='root', passwd='root', db="Bakalarka")
 cursor = db.cursor()
 
-cursor.execute("SELECT domain_name FROM Whitelist")
+cursor.execute("SELECT domain_name FROM Whitelist where id<10")
 result = cursor.fetchall()
 
 
@@ -30,5 +30,5 @@ for key in hits:
 
 print(freq)
 
-with open('/Users/martinapivarnikova/Documents/freq.txt', 'w') as file:
+with open('/Users/martinapivarnikova/Documents/freq2.txt', 'w') as file:
      file.write(json.dumps(freq))

@@ -1,25 +1,56 @@
 import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import pymysql
 
-TO = 'm.pivarnikova1@gmail.com'
-SUBJECT = 'TEST MAIL'
-TEXT = 'Here is a message from python.'
+fromaddr = "5183328@upjs.sk"
+toaddr = "m.pivarnikova1@gmail.com"
 
-# Gmail Sign In
-gmail_sender = ''
-gmail_passwd = ''
+db = pymysql.connect(host='localhost',
+                     user='root', passwd='root', db="Bakalarka")
+cursor = db.cursor()
 
-server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+
+msg = MIMEMultipart()
+msg['From'] = fromaddr
+msg['To'] = toaddr
+msg['Subject'] = "Test Mail"
+
+body = '' + "Blacklist: \n"
+cursor.execute("SELECT * FROM BLResults")
+res = cursor.fetchall()
+
+for s in res:
+    for x in s:
+        body = body + "\t\t" + str(x)
+body = body + "\n"
+
+body = body + "Analýza doménových mien: \n"
+cursor.execute("SELECT * FROM DNResults")
+res = cursor.fetchall()
+
+for s in res:
+    for x in s:
+        body = body + "\t\t" + str(x)
+body = body + "\n"
+
+body = body + "Analýza DNS odpovedí: \n"
+cursor.execute("SELECT time_of,query_address,domain_name FROM NXDomainResults")
+res = cursor.fetchall()
+
+for s in res:
+    for x in s:
+        body = body + "\t\t" + str(x)
+body = body + "\n"
+
+msg.attach(MIMEText(body, 'plain'))
+
+server = smtplib.SMTP('smtp.office365.com', 587)
+server.ehlo()
+server.starttls()
 server.ehlo()
 
-server.login(gmail_sender, gmail_passwd)
-
-BODY = '\r\n'.join(['To: %s' % TO,
-                    'From: %s' % gmail_sender,
-                    'Subject: %s' % SUBJECT,
-                    '', TEXT])
-
-
-server.sendmail(gmail_sender, [TO], BODY)
-print ('email sent')
-
+server.login(fromaddr, "***")
+text = msg.as_string()
+server.sendmail(fromaddr, toaddr, text)
 server.quit()

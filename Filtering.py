@@ -111,8 +111,13 @@ def save_db():
                     ip = ipa[len(ipa) - 1]
             if '---' in line:
                 cnt = 0
-                # if check_blacklist(dn): insert into db
-                # domain name must contain at least two dots to be normal (cause DNS generates weird domains)
+                if check_blacklist(dn):
+                    cursor.execute('SELECT type FROM Blacklist WHERE domain_name = %s', (dn,))
+                    type = cursor.fetchone()[0]
+                    cursor.execute('INSERT INTO BLResults(type_rq,time_of,query_address,rcode,id_q,domain_name,ip,type) '
+                        'VALUES(%s,%s,%s,%s,%s,%s,%s,%s)',
+                        (type, time_of, query_address, rcode, id_q, dn, ip,type))
+                    db.commit()
                 if dn.count('.') > 1 and not check_whitelist(dn):
                     batch += 1
                     cursor.execute(
