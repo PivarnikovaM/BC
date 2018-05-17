@@ -106,11 +106,15 @@ class ConsumerThread(threading.Thread):
 
 
 if __name__ == '__main__':
+
+    start_time = time.time()
     p = ProducerThread(name='producer')
     c = ConsumerThread(name='consumer')
 
     p.start()
     time.sleep(2)
-    for i in range(4):
+    for i in range(1):
         c = ConsumerThread(name='consumer')
         c.start()
+
+    print("--- %s seconds ---" % (time.time() - start_time))

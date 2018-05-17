@@ -1,6 +1,8 @@
 import pymysql
 from pybloom import BloomFilter
 import os
+import time
+
 
 # filter an extended DNSTAP file
 def filter_ext():
@@ -22,7 +24,7 @@ def filter_ext():
                 cnt = 0
                 test = False
 
-
+start_time = time.time()
 f = BloomFilter(capacity=5000000, error_rate=0.00001)
 db = pymysql.connect(host='localhost',
                      user='root', passwd='root', db="Bakalarka")
@@ -48,15 +50,16 @@ def check_whitelist(dn):
 
     return False
 
+
 fblack = BloomFilter(capacity=12000, error_rate=0.00001)
 cursor_bl = db.cursor()
 cursor_bl.execute("SELECT domain_name,type FROM Blacklist")
 results_bl = cursor_bl.fetchall()
 cursor_bl.close()
 
+
 # Blacklist comparision using Bloom filter
 def check_blacklist(dn):
-
     for r in results_bl:
         fblack.add(r[0])
 
@@ -68,6 +71,8 @@ def check_blacklist(dn):
 
 # parsing DNSTAP data and saving into db (WL/BL filtered)
 def save_db():
+
+
     db = pymysql.connect(host='localhost',
                          user='root', passwd='root', db="Bakalarka")
     cursor = db.cursor()
@@ -77,7 +82,8 @@ def save_db():
     str = ''
     ip = ''
     batch = 0
-    with os.popen('sed -n "6956670,11323532p" /Users/martinapivarnikova/Downloads/filteredDNS.txt', 'r') as file:
+    with os.popen('/Users/martinapivarnikova/Downloads/filteredDNS.txt', 'r') as file:
+        s = open('/Users/martinapivarnikova/Downloads/vysledkyFiltracie.txt', 'w')
         for line in file:
             cnt += 1
             split_dq = line.split(" ")
@@ -114,12 +120,16 @@ def save_db():
                 if check_blacklist(dn):
                     cursor.execute('SELECT type FROM Blacklist WHERE domain_name = %s', (dn,))
                     type = cursor.fetchone()[0]
+
                     cursor.execute('INSERT INTO BLResults(type_rq,time_of,query_address,rcode,id_q,domain_name,ip,type) '
                         'VALUES(%s,%s,%s,%s,%s,%s,%s,%s)',
                         (type, time_of, query_address, rcode, id_q, dn, ip,type))
                     db.commit()
                 if dn.count('.') > 1 and not check_whitelist(dn):
                     batch += 1
+                    # string = '' + type + ' ' + time_of + ' ' + query_address + ' ' + rcode + ' ' + id_q + ' ' + dn + ' ' + ip + '\n'
+                    # s.write(string)
+
                     cursor.execute(
                         'INSERT INTO Data3(type_rq,time_of,query_address,rcode,id_q,domain_name,ip) '
                         'VALUES(%s,%s,%s,%s,%s,%s,%s)',
@@ -131,5 +141,7 @@ def save_db():
     db.commit()
     cursor.close()
     db.close()
+
+print("--- %s seconds ---" % (time.time() - start_time))
 
 save_db()

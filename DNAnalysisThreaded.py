@@ -4,7 +4,7 @@ import time
 import pymysql
 import math
 from collections import Counter
-
+import time
 
 
 BUF_SIZE = 10000
@@ -77,7 +77,7 @@ class ConsumerThread(threading.Thread):
             if letter == '-':
                 sum += 1
 
-        return sum;
+        return sum
 
     def analyse(self,item):
         # s = open('/Users/martinapivarnikova/Downloads/dnAnalysisRes.txt', 'a')
@@ -109,11 +109,15 @@ class ConsumerThread(threading.Thread):
 
 
 if __name__ == '__main__':
+
+    start_time = time.time()
     p = ProducerThread(name='producer')
     c = ConsumerThread(name='consumer')
 
     p.start()
     time.sleep(2)
-    for i in range(4):
+    for i in range(2):
         c = ConsumerThread(name='consumer')
         c.start()
+
+    print("--- %s seconds ---" % (time.time() - start_time))
